@@ -1,4 +1,4 @@
-# YJH - Your "Job's Here" Quality Management Platform
+# YJH - "Your Job's Here" Quality Management Platform
 
 YJH is an integrated QA platform that combines bug tracking, test management, wiki knowledge base, kanban, and release risk analytics in one lightweight PHP + SQLite stack.
 
