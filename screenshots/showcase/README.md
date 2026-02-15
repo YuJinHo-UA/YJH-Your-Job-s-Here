@@ -9,3 +9,4 @@
 7. ![Screenshot 7](ai-chat-attachment-13915740559499240548.png)
 8. ![Screenshot 8](ai-chat-attachment-8483730064423831511.png)
 9. ![Screenshot 9](ai-chat-attachment-10791166956976575596.png)
+10. ![Screenshot 10](ai-chat-attachment-11695030083572732472.png)

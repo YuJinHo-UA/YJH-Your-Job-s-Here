@@ -1,15 +1,31 @@
 (() => {
+    if (!window.__yjhChartsThemeSyncBound) {
+        window.__yjhChartsThemeSyncBound = true;
+        window.addEventListener('yjh:theme-changed', () => {
+            window.setTimeout(() => window.location.reload(), 40);
+        });
+    }
+
     const t = (value) => (window.uiT ? window.uiT(value) : value);
     const bodyStyles = getComputedStyle(document.body);
     const textColor = bodyStyles.getPropertyValue('--text')?.trim() || '#e2e8f0';
     const gridColor = 'rgba(148, 163, 184, 0.18)';
-    const isDark = document.body.classList.contains('theme-dark');
-    const tickColor = isDark ? 'rgba(226, 232, 240, 0.9)' : textColor;
-    const legendColor = isDark ? '#f1f5f9' : '#1f2937';
+    const isDark = document.documentElement.classList.contains('theme-dark') || document.body.classList.contains('theme-dark');
+    const contrastText = isDark ? '#ffffff' : '#000000';
+    const tickColor = contrastText;
+    const legendColor = contrastText;
     const palette = {
         opened: '#ef4444',
         closed: '#3b82f6',
         inProgress: '#22c55e'
+    };
+    const withProject = (path, params, projectId) => {
+        const query = new URLSearchParams(params || {});
+        if (Number(projectId) > 0) {
+            query.set('project_id', String(projectId));
+        }
+        const qs = query.toString();
+        return qs ? `${path}?${qs}` : path;
     };
 
     const commonOptions = {
@@ -28,8 +44,8 @@
                 labels: {
                     color: legendColor,
                     font: {
-                        size: 15,
-                        weight: '600'
+                        size: 14,
+                        weight: '700'
                     },
                     boxWidth: 14,
                     boxHeight: 14,
@@ -40,8 +56,8 @@
             },
             tooltip: {
                 backgroundColor: isDark ? '#0b1220' : '#ffffff',
-                titleColor: textColor,
-                bodyColor: textColor,
+                titleColor: contrastText,
+                bodyColor: contrastText,
                 borderColor: gridColor,
                 borderWidth: 1,
                 padding: 10,
@@ -54,35 +70,35 @@
     if (donut) {
         donut.style.cursor = 'pointer';
         const data = JSON.parse(donut.dataset.chart || '{}');
+        const projectId = Number(data.project_id || 0);
         const pass = Number(data.pass || 0);
         const fail = Number(data.fail || 0);
         const inProgress = Number(data.in_progress || 0);
         const groups = [
-            { label: t('New Bugs'), value: inProgress, result: 'in_progress', color: palette.inProgress },
-            { label: t('Closed'), value: pass, result: 'pass', color: palette.closed },
-            { label: t('Opened'), value: fail, result: 'fail', color: palette.opened }
+            { label: t('New Bugs'), value: inProgress, result: 'in_progress', color: '#22c55e' },
+            { label: t('In Progress'), value: fail, result: 'fail', color: '#ef4444' },
+            { label: t('Closed'), value: pass, result: 'pass', color: '#3b82f6' }
         ];
         const total = groups.reduce((sum, group) => sum + group.value, 0);
-        const ringBorder = isDark ? '#1a2740' : '#e2e8f0';
+        const ringBorder = isDark ? '#16233a' : '#e2e8f0';
         const chartValues = total > 0 ? groups.map((group) => group.value) : [1];
         const chartColors = total > 0 ? groups.map((group) => group.color) : [isDark ? '#334155' : '#cbd5e1'];
-        const chartLabels = total > 0 ? groups.map((group) => group.label) : [t('No open tasks.')];
 
         const donutChart = new Chart(donut, {
             type: 'doughnut',
             data: {
-                labels: chartLabels,
+                labels: total > 0 ? groups.map((item) => item.label) : [t('No open tasks.')],
                 datasets: [{
                     data: chartValues,
                     backgroundColor: chartColors,
                     borderColor: ringBorder,
                     borderWidth: 2,
-                    hoverOffset: 8
+                    hoverOffset: 6
                 }]
             },
             options: {
                 ...commonOptions,
-                cutout: '56%',
+                cutout: '46%',
                 plugins: {
                     ...commonOptions.plugins,
                     legend: {
@@ -91,13 +107,14 @@
                         align: 'center',
                         labels: {
                             ...commonOptions.plugins.legend.labels,
-                            boxWidth: 14,
-                            boxHeight: 14,
-                            padding: 16,
+                            boxWidth: 10,
+                            boxHeight: 10,
+                            padding: 10,
                             generateLabels(chart) {
                                 if (total <= 0) {
                                     return [{
                                         text: t('No open tasks.'),
+                                        color: legendColor,
                                         fillStyle: chartColors[0],
                                         strokeStyle: chartColors[0],
                                         lineWidth: 0,
@@ -109,6 +126,7 @@
                                 const bg = dataset.backgroundColor || [];
                                 return groups.map((group, index) => ({
                                     text: `${group.label}: ${group.value}`,
+                                    color: legendColor,
                                     fillStyle: bg[index] || group.color,
                                     strokeStyle: bg[index] || group.color,
                                     lineWidth: 0,
@@ -123,9 +141,10 @@
                         callbacks: {
                             label(context) {
                                 if (total <= 0) return t('No open tasks.');
-                                const value = Number(context.raw || 0);
+                                const meta = groups[context.dataIndex] || groups[0];
+                                const value = Number(meta.value || 0);
                                 const pct = total > 0 ? Math.round((value / total) * 100) : 0;
-                                return `${groups[context.dataIndex].label}: ${value} (${pct}%)`;
+                                return `${meta.label}: ${value} (${pct}%)`;
                             }
                         }
                     }
@@ -138,9 +157,10 @@
                 return;
             }
             const index = points[0].index;
-            const result = groups[index] ? groups[index].result : '';
+            const meta = groups[index];
+            const result = meta ? meta.result : '';
             if (!result) return;
-            window.location.href = `/testruns.php?result=${encodeURIComponent(result)}`;
+            window.location.href = withProject('/testruns.php', { result }, projectId);
         });
     }
 
@@ -148,6 +168,7 @@
     if (bar) {
         bar.style.cursor = 'pointer';
         const data = JSON.parse(bar.dataset.chart || '{}');
+        const projectId = Number(data.project_id || 0);
         const barChart = new Chart(bar, {
             type: 'bar',
             data: {
@@ -158,9 +179,9 @@
                     backgroundColor: palette.closed,
                     borderRadius: 8,
                     borderSkipped: false,
-                    maxBarThickness: 56,
-                    barPercentage: 0.62,
-                    categoryPercentage: 0.7
+                    maxBarThickness: 34,
+                    barPercentage: 0.5,
+                    categoryPercentage: 0.62
                 }]
             },
             options: {
@@ -175,12 +196,12 @@
                 },
                 scales: {
                     x: {
-                        ticks: { color: tickColor, font: { size: 13, weight: '600' } },
+                        ticks: { color: tickColor, font: { size: 12, weight: '600' } },
                         grid: { color: gridColor }
                     },
                     y: {
                         beginAtZero: true,
-                        ticks: { color: tickColor, precision: 0, stepSize: 1 },
+                        ticks: { color: tickColor, precision: 0, stepSize: 1, font: { size: 12, weight: '600' } },
                         grid: { color: gridColor }
                     }
                 }
@@ -195,8 +216,7 @@
             if (!label) {
                 return;
             }
-            const params = new URLSearchParams({ priority_group: 'high', status: label });
-            window.location.href = `/bugs.php?${params.toString()}`;
+            window.location.href = withProject('/bugs.php', { priority_group: 'high', status: label }, projectId);
         });
     }
 
@@ -204,6 +224,7 @@
     if (line) {
         line.style.cursor = 'pointer';
         const data = JSON.parse(line.dataset.chart || '{}');
+        const projectId = Number(data.project_id || 0);
         const lineChart = new Chart(line, {
             type: 'line',
             data: {
@@ -213,26 +234,42 @@
                         label: t('Opened'),
                         data: data.opened || [],
                         borderColor: palette.opened,
-                        backgroundColor: 'rgba(239, 68, 68, 0.16)',
+                        backgroundColor: (context) => {
+                            const { chart } = context;
+                            const { ctx, chartArea } = chart;
+                            if (!chartArea) return 'rgba(239, 68, 68, 0.14)';
+                            const gradient = ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
+                            gradient.addColorStop(0, 'rgba(239, 68, 68, 0.24)');
+                            gradient.addColorStop(1, 'rgba(239, 68, 68, 0.04)');
+                            return gradient;
+                        },
                         pointBackgroundColor: palette.opened,
                         pointBorderColor: palette.opened,
-                        pointRadius: 4,
+                        pointRadius: 3,
                         pointHoverRadius: 6,
-                        tension: 0.35,
-                        borderWidth: 3,
+                        tension: 0.45,
+                        borderWidth: 2.5,
                         fill: true
                     },
                     {
                         label: t('Closed'),
                         data: data.closed || [],
                         borderColor: palette.closed,
-                        backgroundColor: 'rgba(59, 130, 246, 0.14)',
+                        backgroundColor: (context) => {
+                            const { chart } = context;
+                            const { ctx, chartArea } = chart;
+                            if (!chartArea) return 'rgba(59, 130, 246, 0.12)';
+                            const gradient = ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
+                            gradient.addColorStop(0, 'rgba(59, 130, 246, 0.2)');
+                            gradient.addColorStop(1, 'rgba(59, 130, 246, 0.04)');
+                            return gradient;
+                        },
                         pointBackgroundColor: palette.closed,
                         pointBorderColor: palette.closed,
-                        pointRadius: 4,
+                        pointRadius: 3,
                         pointHoverRadius: 6,
-                        tension: 0.35,
-                        borderWidth: 3,
+                        tension: 0.45,
+                        borderWidth: 2.5,
                         fill: true
                     }
                 ]
@@ -263,10 +300,10 @@
                 return;
             }
             if (point.datasetIndex === 0) {
-                window.location.href = `/bugs.php?created_date=${encodeURIComponent(date)}`;
+                window.location.href = withProject('/bugs.php', { created_date: date }, projectId);
                 return;
             }
-            window.location.href = `/bugs.php?status=closed&closed_date=${encodeURIComponent(date)}`;
+            window.location.href = withProject('/bugs.php', { status: 'closed', closed_date: date }, projectId);
         });
     }
 })();

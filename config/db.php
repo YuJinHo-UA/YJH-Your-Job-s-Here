@@ -1,5 +1,6 @@
 <?php
 declare(strict_types=1);
+require_once __DIR__ . '/../includes/encryption.php';
 
 function db(): PDO
 {
@@ -18,6 +19,7 @@ function db(): PDO
     $pdo->exec('PRAGMA busy_timeout = 5000;');
 
     initialize_schema($pdo);
+    apply_security_migrations($pdo);
 
     if ($isNew) {
         seed_demo_data($pdo);
@@ -638,4 +640,95 @@ SQL);
     $pdo->exec("INSERT INTO user_achievements (user_id, achievement_id) VALUES (2, 1), (2, 2), (3, 1)");
 
     $pdo->commit();
+}
+
+function apply_security_migrations(PDO $pdo): void
+{
+    ensure_column($pdo, 'users', 'email_encrypted', 'TEXT');
+    ensure_column($pdo, 'users', 'email_hash', 'TEXT');
+    ensure_column($pdo, 'users', 'twofa_secret_encrypted', 'TEXT');
+    ensure_column($pdo, 'users', 'twofa_enabled', 'INTEGER NOT NULL DEFAULT 0');
+
+    $pdo->exec(
+        'CREATE TABLE IF NOT EXISTS security_log (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER,
+            action TEXT NOT NULL,
+            ip_address TEXT,
+            user_agent TEXT,
+            details TEXT,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id)
+        )'
+    );
+
+    $pdo->exec(
+        'CREATE TABLE IF NOT EXISTS rate_limit_entries (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            key TEXT NOT NULL,
+            attempted_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )'
+    );
+
+    $pdo->exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email_hash ON users(email_hash)');
+    $pdo->exec('CREATE INDEX IF NOT EXISTS idx_security_log_action_created ON security_log(action, created_at)');
+    $pdo->exec('CREATE INDEX IF NOT EXISTS idx_security_log_user_created ON security_log(user_id, created_at)');
+    $pdo->exec('CREATE INDEX IF NOT EXISTS idx_rate_limit_key_time ON rate_limit_entries(key, attempted_at)');
+
+    backfill_encrypted_emails($pdo);
+}
+
+function ensure_column(PDO $pdo, string $table, string $column, string $definition): void
+{
+    $stmt = $pdo->query("PRAGMA table_info($table)");
+    $columns = $stmt ? $stmt->fetchAll(PDO::FETCH_ASSOC) : [];
+    foreach ($columns as $col) {
+        if (($col['name'] ?? '') === $column) {
+            return;
+        }
+    }
+    $pdo->exec("ALTER TABLE $table ADD COLUMN $column $definition");
+}
+
+function backfill_encrypted_emails(PDO $pdo): void
+{
+    $stmt = $pdo->query('SELECT id, email, email_encrypted, email_hash FROM users');
+    $users = $stmt ? $stmt->fetchAll(PDO::FETCH_ASSOC) : [];
+    if (!$users) {
+        return;
+    }
+
+    $update = $pdo->prepare(
+        'UPDATE users
+         SET email = :email_marker,
+             email_encrypted = :email_encrypted,
+             email_hash = :email_hash
+         WHERE id = :id'
+    );
+
+    foreach ($users as $user) {
+        $emailEncrypted = (string)($user['email_encrypted'] ?? '');
+        $emailHash = (string)($user['email_hash'] ?? '');
+        $rawEmail = (string)($user['email'] ?? '');
+        $plainEmail = $emailEncrypted !== '' ? decrypt_value($emailEncrypted) : $rawEmail;
+
+        if ($plainEmail === '') {
+            continue;
+        }
+
+        $nextHash = email_hash($plainEmail);
+        $nextEncrypted = $emailEncrypted !== '' ? $emailEncrypted : encrypt_value($plainEmail);
+        $marker = 'enc:' . substr($nextHash, 0, 24);
+
+        if ($rawEmail === $marker && $emailHash === $nextHash && $emailEncrypted !== '') {
+            continue;
+        }
+
+        $update->execute([
+            ':id' => (int)$user['id'],
+            ':email_marker' => $marker,
+            ':email_encrypted' => $nextEncrypted,
+            ':email_hash' => $nextHash,
+        ]);
+    }
 }

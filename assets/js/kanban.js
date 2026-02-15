@@ -5,6 +5,21 @@
     const cardIdField = document.getElementById('kanbanCardId');
     const submitBtn = document.getElementById('kanbanCardSubmit');
     const cancelBtn = document.getElementById('kanbanCardCancel');
+    const addColumnBtn = document.getElementById('kanbanAddColumnBtn');
+    const columnModalEl = document.getElementById('kanbanColumnModal');
+    const columnNameInput = document.getElementById('kanbanColumnNameInput');
+    const columnCreateSubmit = document.getElementById('kanbanColumnCreateSubmit');
+    const columnModal = columnModalEl && window.bootstrap ? new window.bootstrap.Modal(columnModalEl) : null;
+
+    if (columnModalEl) {
+        const modalTitle = columnModalEl.querySelector('.modal-title');
+        const label = columnModalEl.querySelector('label[for="kanbanColumnNameInput"]');
+        const cancel = columnModalEl.querySelector('[data-bs-dismiss="modal"]');
+        if (modalTitle) modalTitle.textContent = t('Create column');
+        if (label) label.textContent = t('Column name');
+        if (cancel) cancel.textContent = t('Cancel');
+        if (columnCreateSubmit) columnCreateSubmit.textContent = t('Create');
+    }
     let dragged = null;
     let dragInProgress = false;
 
@@ -256,6 +271,43 @@
             cardIdField.value = '';
             submitBtn.textContent = t('Add Card');
             cancelBtn.classList.add('d-none');
+        });
+    }
+
+    if (addColumnBtn) {
+        addColumnBtn.addEventListener('click', () => {
+            if (!columnModal || !columnNameInput) return;
+            columnNameInput.value = '';
+            columnModal.show();
+            setTimeout(() => columnNameInput.focus(), 120);
+        });
+    }
+
+    if (columnCreateSubmit) {
+        columnCreateSubmit.addEventListener('click', async () => {
+            const boardId = addColumnBtn ? addColumnBtn.dataset.boardId : '';
+            const name = columnNameInput ? columnNameInput.value.trim() : '';
+            if (!name) return;
+
+            try {
+                await apiCall({
+                    action: 'create_column',
+                    board_id: boardId,
+                    name
+                });
+                window.location.reload();
+            } catch (error) {
+                alert(error.message || t('Unable to create column'));
+            }
+        });
+    }
+
+    if (columnNameInput && columnCreateSubmit) {
+        columnNameInput.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                columnCreateSubmit.click();
+            }
         });
     }
 })();

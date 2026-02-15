@@ -23,7 +23,8 @@ YJH is an integrated QA platform that combines bug tracking, test management, wi
 - Security: CSRF protection + server-side escaping helpers
 
 ## Screenshot
-![YJH Dashboard (Dark Theme)](docs/screenshots/dashboard-dark.png)
+![YJH Dashboard (Dark Theme)](screenshots/dashboard-dark.png)
+![YJH Presentation V 1.0](presentation-v1.0.png)
 
 ## Documentation
 - Architecture: `docs/ARCHITECTURE.md`
@@ -38,6 +39,7 @@ YJH is an integrated QA platform that combines bug tracking, test management, wi
 - Why YJH: `docs/WHY_YJH.md`
 - Visualizations: `docs/VISUALIZATIONS.md`
 - Engineering Notes: `docs/ENGINEERING_NOTES.md`
+- Security: `docs/SECURITY.md`
 
 ## Quick Start
 See `docs/QUICKSTART.md`.
