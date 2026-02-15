@@ -259,6 +259,21 @@
         'Unable to update column': 'Не удалось обновить столбец',
         'Column is not empty': 'Столбец не пустой',
         'Invalid CSRF token': 'Неверный CSRF токен'
+        ,
+        'Actions': 'Действия',
+        'Delete release?': 'Удалить релиз?',
+        'Delete record?': 'Удалить запись?',
+        'Delete user?': 'Удалить пользователя?',
+        'Release deleted': 'Релиз удален',
+        'Release updated': 'Релиз обновлен',
+        'Cannot delete release: it is used in linked records': 'Нельзя удалить релиз: он используется в связанных данных',
+        'Availability deleted': 'Отсутствие удалено',
+        'Availability updated': 'Отсутствие обновлено',
+        'Edit absence': 'Редактировать отсутствие',
+        'User updated': 'Пользователь обновлен',
+        'User deleted': 'Пользователь удален',
+        'You cannot delete your own account': 'Нельзя удалить свой аккаунт',
+        'Cannot delete user: linked records exist': 'Нельзя удалить пользователя: есть связанные записи'
     };
 
     const translate = (input) => {

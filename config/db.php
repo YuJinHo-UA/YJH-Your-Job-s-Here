@@ -515,6 +515,19 @@ CREATE TABLE IF NOT EXISTS notifications (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id)
 );
+
+CREATE TABLE IF NOT EXISTS translation_cache (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    source_lang TEXT NOT NULL,
+    target_lang TEXT NOT NULL,
+    text_hash TEXT NOT NULL,
+    source_text TEXT NOT NULL,
+    translated_text TEXT NOT NULL,
+    provider TEXT DEFAULT 'libretranslate',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(source_lang, target_lang, text_hash)
+);
 SQL;
 
     $pdo->exec($schema);

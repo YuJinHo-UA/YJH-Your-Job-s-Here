@@ -22,6 +22,9 @@ YJH is an integrated QA platform that combines bug tracking, test management, wi
 - UI: Bootstrap 5 + Chart.js + custom JS
 - Security: CSRF protection + server-side escaping helpers
 
+## Screenshot
+![YJH Dashboard (Dark Theme)](docs/screenshots/dashboard-dark.png)
+
 ## Documentation
 - Architecture: `docs/ARCHITECTURE.md`
 - Database: `docs/DATABASE.md`
