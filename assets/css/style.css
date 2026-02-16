@@ -16,6 +16,13 @@
     --card: #1e293b;
     --text: #e2e8f0;
     --muted: #94a3b8;
+    --bs-body-color: #e2e8f0;
+    --bs-secondary-color: #94a3b8;
+    --bs-emphasis-color: #f8fafc;
+    --bs-tertiary-color: #94a3b8;
+    --bs-border-color: rgba(148, 163, 184, 0.3);
+    --bs-link-color: #93c5fd;
+    --bs-link-hover-color: #bfdbfe;
 }
 
 * {
@@ -51,6 +58,14 @@ body {
 .theme-dark .app-sidebar,
 .theme-dark .kanban-column,
 .theme-dark .search-modal-card {
+    color: var(--text);
+}
+
+.theme-dark .dropdown-item,
+.theme-dark .nav-link,
+.theme-dark .list-group-item,
+.theme-dark .btn-link,
+.theme-dark .form-check-label {
     color: var(--text);
 }
 

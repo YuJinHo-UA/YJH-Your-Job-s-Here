@@ -11,9 +11,9 @@
     const textColor = bodyStyles.getPropertyValue('--text')?.trim() || '#e2e8f0';
     const gridColor = 'rgba(148, 163, 184, 0.18)';
     const isDark = document.documentElement.classList.contains('theme-dark') || document.body.classList.contains('theme-dark');
-    const contrastText = isDark ? '#ffffff' : '#000000';
-    const tickColor = contrastText;
-    const legendColor = contrastText;
+    const contrastText = isDark ? '#ffffff' : '#0f172a';
+    const tickColor = textColor;
+    const legendColor = textColor;
     const palette = {
         opened: '#ef4444',
         closed: '#3b82f6',
@@ -66,6 +66,11 @@
         }
     };
 
+    if (window.Chart && Chart.defaults) {
+        Chart.defaults.color = textColor;
+        Chart.defaults.borderColor = gridColor;
+    }
+
     const donut = document.getElementById('chartPassFail');
     if (donut) {
         donut.style.cursor = 'pointer';
@@ -115,6 +120,7 @@
                                     return [{
                                         text: t('No open tasks.'),
                                         color: legendColor,
+                                        fontColor: legendColor,
                                         fillStyle: chartColors[0],
                                         strokeStyle: chartColors[0],
                                         lineWidth: 0,
@@ -127,6 +133,7 @@
                                 return groups.map((group, index) => ({
                                     text: `${group.label}: ${group.value}`,
                                     color: legendColor,
+                                    fontColor: legendColor,
                                     fillStyle: bg[index] || group.color,
                                     strokeStyle: bg[index] || group.color,
                                     lineWidth: 0,
