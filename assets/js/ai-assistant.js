@@ -5,7 +5,16 @@
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ action, ...payload }),
         });
-        const result = await response.json();
+
+        const raw = await response.text();
+        let result = null;
+        try {
+            result = JSON.parse(raw);
+        } catch (e) {
+            const snippet = raw.replace(/\s+/g, ' ').trim().slice(0, 180);
+            throw new Error(`Server returned non-JSON response (${response.status}). ${snippet}`);
+        }
+
         if (!response.ok || !result.success) {
             throw new Error(result.error || 'AI request failed');
         }
