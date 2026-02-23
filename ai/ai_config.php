@@ -2,7 +2,7 @@
 declare(strict_types=1);
 
 return [
-    'provider' => getenv('YJH_AI_PROVIDER') ?: 'mock', // openai|mock
+    'provider' => getenv('YJH_AI_PROVIDER') ?: (getenv('OPENAI_API_KEY') ? 'openai' : 'mock'), // openai|mock
     'model' => getenv('YJH_AI_MODEL') ?: 'gpt-4o-mini',
     'api_key' => getenv('OPENAI_API_KEY') ?: '',
     'openai_url' => getenv('YJH_OPENAI_URL') ?: 'https://api.openai.com/v1/chat/completions',

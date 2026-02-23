@@ -190,6 +190,7 @@
         if (!toggleBtn || !modalEl || !messagesEl || !inputEl || !sendBtn || !window.bootstrap) return;
 
         const modal = new window.bootstrap.Modal(modalEl);
+        let mockNoticeShown = false;
         toggleBtn.addEventListener('click', () => modal.show());
 
         const send = async () => {
@@ -199,9 +200,13 @@
             inputEl.value = '';
             setBusy(sendBtn, true);
             try {
-                const { data } = await postAI('chat', { message, page: window.location.pathname });
+                const { data, meta } = await postAI('chat', { message, page: window.location.pathname });
                 const answer = data.answer || data.raw || JSON.stringify(data);
                 appendChatMessage(messagesEl, 'assistant', answer);
+                if (!mockNoticeShown && meta && meta.model === 'mock') {
+                    appendChatMessage(messagesEl, 'assistant', 'Note: running in MOCK mode. Configure OPENAI_API_KEY for real model responses.');
+                    mockNoticeShown = true;
+                }
             } catch (error) {
                 appendChatMessage(messagesEl, 'assistant', 'Error: ' + error.message);
             } finally {

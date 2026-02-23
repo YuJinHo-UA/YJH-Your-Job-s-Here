@@ -87,11 +87,11 @@ final class AIHelper
             try {
                 return $this->callOpenAI($prompt, $systemMessage);
             } catch (Throwable $e) {
-                return $this->mockResponse($actionType, $e->getMessage());
+                return $this->mockResponse($actionType, $prompt, $e->getMessage());
             }
         }
 
-        return $this->mockResponse($actionType, null);
+        return $this->mockResponse($actionType, $prompt, null);
     }
 
     private function callOpenAI(string $prompt, string $systemMessage): array
@@ -163,7 +163,7 @@ final class AIHelper
         $stmt->execute([':prompt_hash' => $hash, ':prompt' => $prompt, ':response' => $response, ':model' => $this->model, ':tokens_used' => $tokensUsed]);
     }
 
-    private function mockResponse(string $actionType, ?string $error): array
+    private function mockResponse(string $actionType, string $prompt, ?string $error): array
     {
         $payload = match ($actionType) {
             'bug_analysis' => [
@@ -181,7 +181,7 @@ final class AIHelper
                 'note' => $error ? ('fallback: ' . $error) : 'mock mode',
             ],
             'chat' => [
-                'answer' => 'Chat is active. Ask about test cases, bug analysis, duplicates, or weekly reports.',
+                'answer' => 'AI is running in mock mode. Set OPENAI_API_KEY and YJH_AI_PROVIDER=openai for real responses. Your message: ' . mb_substr(trim($prompt), 0, 220),
                 'note' => $error ? ('fallback: ' . $error) : 'mock mode',
             ],
             default => [
